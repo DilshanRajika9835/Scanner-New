@@ -1,0 +1,194 @@
+StaggeredGridView.countBuilder(
+              padding: const EdgeInsets.all(8.0),
+              crossAxisCount: 4,
+              itemCount: imageList.length,
+              itemBuilder: (context, index) {
+                String imgPath = imageList[index];
+                return Material(
+                  elevation: 8.0,
+                  borderRadius: const BorderRadius.all(Radius.circular(8)),
+                  child: InkWell(
+                    onTap: () {
+                      if (pathPDF.isNotEmpty) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PDFScreen(path: pathPDF),
+                          ),
+                        );
+                      }
+                    },
+                    child: Hero(
+                      tag: imgPath,
+                      child: Image.file(
+                        File(imgPath),
+                        fit: BoxFit.fill,
+                      ),
+                    ),
+                  ),
+                );
+              },
+              staggeredTileBuilder: (i) =>
+                  StaggeredTile.count(2, i.isEven ? 2 : 3),
+              mainAxisSpacing: 8.0,
+              crossAxisSpacing: 8.0,
+            )
+
+            ///////////////////////////////////////////////////////////////////////////
+            import 'dart:async';
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:scanner/component/topbar.dart';
+import 'package:scanner/screen/pdf_screen.dart';
+
+final Directory _photoDir = Directory('/storage/emulated/0/Scanner');
+
+class Photos extends StatefulWidget {
+  const Photos({Key? key}) : super(key: key);
+
+  @override
+  PhotosState createState() {
+    return PhotosState();
+  }
+}
+
+class PhotosState extends State {
+  String pathPDF = "";
+  final List<File> imageFiles = [];
+  @override
+  void initState() {
+    print(_photoDir.path);
+    super.initState();
+    fromAsset('assets/demo.pdf', 'demo.pdf').then((f) {
+      setState(() {
+        pathPDF = f.path;
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!Directory(_photoDir.path).existsSync()) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text("TapScanner Images"),
+        ),
+        body: const Center(
+          child: Text(
+            "All TapScanner images should appear here",
+            style: TextStyle(fontSize: 18.0),
+          ),
+        ),
+      );
+    } else {
+      var imageList = _photoDir
+          .listSync()
+          .map((item) => item.path)
+          .where((item) => item.endsWith(".png"))
+          .toList(growable: false);
+
+      if (imageList.isNotEmpty) {
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text("TapScanner Images"),
+            actions: [
+              NamedIcon(
+                text: 'Image',
+                iconData: Icons.image_outlined,
+                onTap: () {},
+              ),
+              NamedIcon(
+                text: 'PDF',
+                iconData: Icons.picture_as_pdf,
+                onTap: () {},
+              ),
+            ],
+          ),
+          body: Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/tpScanner.png'),
+                fit: BoxFit.cover,
+                // colorFilter: ColorFilter.mode(
+                //     Colors.black.withOpacity(0.4), BlendMode.darken)
+              ),
+            ),
+            child: StaggeredGridView.countBuilder(
+              padding: const EdgeInsets.all(8.0),
+              crossAxisCount: 4,
+              itemCount: imageList.length,
+              itemBuilder: (context, index) {
+                String imgPath = imageList[index];
+                return Material(
+                  elevation: 8.0,
+                  borderRadius: const BorderRadius.all(Radius.circular(8)),
+                  child: InkWell(
+                    onTap: () {
+                      if (pathPDF.isNotEmpty) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PDFScreen(path: pathPDF),
+                          ),
+                        );
+                      }
+                    },
+                    child: Hero(
+                      tag: imgPath,
+                      child: Image.file(
+                        File(imgPath),
+                        fit: BoxFit.fill,
+                      ),
+                    ),
+                  ),
+                );
+              },
+              staggeredTileBuilder: (i) =>
+                  StaggeredTile.count(2, i.isEven ? 2 : 3),
+              mainAxisSpacing: 8.0,
+              crossAxisSpacing: 8.0,
+            ),
+          ),
+        );
+      } else {
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text("TapScanner Images"),
+          ),
+          body: Center(
+            child: Container(
+              padding: const EdgeInsets.only(bottom: 60.0),
+              child: const Text(
+                "Sorry, No Images Where Found.",
+                style: TextStyle(fontSize: 18.0),
+              ),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<File> fromAsset(String asset, String filename) async {
+    // To open from assets, you can copy them to the app storage folder, and the access them "locally"
+    Completer<File> completer = Completer();
+
+    try {
+      var dir = await getApplicationDocumentsDirectory();
+      //  File file = File("${dir.path}/$filename");
+      File file = File("${dir.path}/$filename");
+      print(file.path);
+      var data = await rootBundle.load(asset);
+      var bytes = data.buffer.asUint8List();
+      await file.writeAsBytes(bytes, flush: true);
+      completer.complete(file);
+    } catch (e) {
+      throw Exception('Error parsing asset file!');
+    }
+
+    return completer.future;
+  }
+}
